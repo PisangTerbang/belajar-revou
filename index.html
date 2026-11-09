@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Icon Clicker 🎯</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* Floating particles background */
+    .particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.15;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 0.15; }
+      90%  { opacity: 0.15; }
+      100% { transform: translateY(-100px) scale(1); opacity: 0; }
+    }
+
+    /* Main container */
+    .container {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+      text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #a0c4ff;
+      margin-bottom: 28px;
+    }
+
+    /* Score board */
+    .scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .score-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 12px 20px;
+      min-width: 110px;
+      backdrop-filter: blur(8px);
+    }
+
+    .score-card .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #a0c4ff;
+      margin-bottom: 4px;
+    }
+
+    .score-card .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      transition: transform 0.1s;
+    }
+
+    .score-card .value.bump {
+      transform: scale(1.3);
+      color: #ffd700;
+    }
+
+    /* Click area */
+    .click-area {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 28px;
+    }
+
+    .icon-btn {
+      font-size: 5.5rem;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 50%;
+      width: 160px;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s;
+      box-shadow: 0 0 30px rgba(100, 200, 255, 0.2);
+      user-select: none;
+      outline: none;
+    }
+
+    .icon-btn:hover {
+      box-shadow: 0 0 50px rgba(100, 200, 255, 0.4);
+    }
+
+    .icon-btn:active,
+    .icon-btn.clicked {
+      transform: scale(0.88);
+      box-shadow: 0 0 70px rgba(255, 215, 0, 0.6);
+      border-color: #ffd700;
+    }
+
+    /* Floating +1 text */
+    .float-text {
+      position: absolute;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      pointer-events: none;
+      animation: floatUp 0.9s ease-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(0.6); }
+    }
+
+    /* Upgrades */
+    .upgrades-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #a0c4ff;
+      margin-bottom: 12px;
+    }
+
+    .upgrades {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .upgrade-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 10px 16px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s, border-color 0.2s, transform 0.1s;
+      min-width: 120px;
+      outline: none;
+    }
+
+    .upgrade-btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.15);
+      border-color: #ffd700;
+      transform: translateY(-2px);
+    }
+
+    .upgrade-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .upgrade-btn .upg-icon { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+    .upgrade-btn .upg-name { font-weight: 600; display: block; }
+    .upgrade-btn .upg-cost { color: #ffd700; font-size: 0.75rem; }
+    .upgrade-btn .upg-effect { color: #a0c4ff; font-size: 0.72rem; }
+
+    /* Reset */
+    .reset-btn {
+      background: transparent;
+      border: 1px solid rgba(255,100,100,0.4);
+      color: rgba(255,130,130,0.8);
+      border-radius: 8px;
+      padding: 7px 18px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      outline: none;
+    }
+
+    .reset-btn:hover {
+      background: rgba(255,80,80,0.15);
+      color: #ff8080;
+    }
+
+    /* Milestone toast */
+    .toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: linear-gradient(90deg, #f7971e, #ffd200);
+      color: #1a1a2e;
+      font-weight: 700;
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-size: 1rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
+      z-index: 100;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast">🎉 Milestone!</div>
+
+  <div class="container">
+    <h1>🎯 Icon Clicker</h1>
+    <p class="subtitle">Klik ikonnya, kumpulkan poin sebanyak mungkin!</p>
+
+    <!-- Score board -->
+    <div class="scoreboard">
+      <div class="score-card">
+        <div class="label">Total Klik</div>
+        <div class="value" id="totalClicks">0</div>
+      </div>
+      <div class="score-card">
+        <div class="label">Per Klik</div>
+        <div class="value" id="perClick">1</div>
+      </div>
+      <div class="score-card">
+        <div class="label">Auto / det</div>
+        <div class="value" id="autoRate">0</div>
+      </div>
+    </div>
+
+    <!-- Main click button -->
+    <div class="click-area" id="clickArea">
+      <button class="icon-btn" id="mainBtn" aria-label="Klik untuk menambah poin">
+        <span id="mainIcon">⚡</span>
+      </button>
+    </div>
+
+    <!-- Upgrades -->
+    <p class="upgrades-title">Upgrade</p>
+    <div class="upgrades" id="upgrades"></div>
+
+    <button class="reset-btn" id="resetBtn">↺ Reset Game</button>
+  </div>
+
+  <script>
+    // ── State ────────────────────────────────────────────────────────────────
+    let state = {
+      clicks: 0,
+      perClick: 1,
+      autoPerSec: 0,
+      upgrades: {}
+    };
+
+    // ── Upgrade definitions ──────────────────────────────────────────────────
+    const UPGRADES = [
+      {
+        id: 'cursor',
+        icon: '🖱️',
+        name: 'Cursor+',
+        desc: '+1 per klik',
+        baseCost: 10,
+        costMultiplier: 1.5,
+        maxLevel: 20,
+        effect: s => { s.perClick += 1; }
+      },
+      {
+        id: 'lightning',
+        icon: '⚡',
+        name: 'Petir',
+        desc: '+3 per klik',
+        baseCost: 50,
+        costMultiplier: 1.6,
+        maxLevel: 15,
+        effect: s => { s.perClick += 3; }
+      },
+      {
+        id: 'robot',
+        icon: '🤖',
+        name: 'Auto Bot',
+        desc: '+1 / detik',
+        baseCost: 100,
+        costMultiplier: 1.8,
+        maxLevel: 10,
+        effect: s => { s.autoPerSec += 1; }
+      },
+      {
+        id: 'rocket',
+        icon: '🚀',
+        name: 'Roket',
+        desc: '+5 / detik',
+        baseCost: 500,
+        costMultiplier: 2.0,
+        maxLevel: 8,
+        effect: s => { s.autoPerSec += 5; }
+      },
+      {
+        id: 'star',
+        icon: '⭐',
+        name: 'Bintang',
+        desc: '+2× per klik',
+        baseCost: 1000,
+        costMultiplier: 3.0,
+        maxLevel: 5,
+        effect: s => { s.perClick *= 2; }
+      }
+    ];
+
+    // ── Milestones ───────────────────────────────────────────────────────────
+    const MILESTONES = [
+      { at: 100,    msg: '🎉 100 Klik! Lumayan!',       icon: '🌟' },
+      { at: 500,    msg: '🔥 500 Klik! Keren!',          icon: '🔥' },
+      { at: 1000,   msg: '💥 1.000 Klik! Luar biasa!',  icon: '💥' },
+      { at: 5000,   msg: '🚀 5.000 Klik! Gila sih!',    icon: '🚀' },
+      { at: 10000,  msg: '👑 10.000 Klik! Legend!',      icon: '👑' },
+      { at: 50000,  msg: '🌈 50.000 Klik! Dewa!',        icon: '🌈' },
+      { at: 100000, msg: '🏆 100.000 Klik! GOAT!',       icon: '🏆' },
+    ];
+    const reachedMilestones = new Set();
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+    const totalEl   = document.getElementById('totalClicks');
+    const perEl     = document.getElementById('perClick');
+    const autoEl    = document.getElementById('autoRate');
+    const mainBtn   = document.getElementById('mainBtn');
+    const mainIcon  = document.getElementById('mainIcon');
+    const clickArea = document.getElementById('clickArea');
+    const upgradesEl= document.getElementById('upgrades');
+    const toast     = document.getElementById('toast');
+    const resetBtn  = document.getElementById('resetBtn');
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function fmt(n) {
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+      if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+      return Math.floor(n).toString();
+    }
+
+    function upgCost(upg) {
+      const lvl = state.upgrades[upg.id] || 0;
+      return Math.floor(upg.baseCost * Math.pow(upg.costMultiplier, lvl));
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    function render() {
+      totalEl.textContent = fmt(state.clicks);
+      perEl.textContent   = fmt(state.perClick);
+      autoEl.textContent  = fmt(state.autoPerSec);
+
+      upgradesEl.querySelectorAll('.upgrade-btn').forEach(btn => {
+        const id  = btn.dataset.id;
+        const upg = UPGRADES.find(u => u.id === id);
+        const lvl = state.upgrades[id] || 0;
+        const cost = upgCost(upg);
+        const maxed = lvl >= upg.maxLevel;
+
+        btn.disabled = maxed || state.clicks < cost;
+        btn.querySelector('.upg-cost').textContent =
+          maxed ? 'MAXED' : `💰 ${fmt(cost)}`;
+        btn.querySelector('.upg-name').textContent =
+          `${upg.name} (Lv${lvl})`;
+      });
+    }
+
+    // ── Build upgrade buttons ────────────────────────────────────────────────
+    function buildUpgrades() {
+      upgradesEl.innerHTML = '';
+      UPGRADES.forEach(upg => {
+        const btn = document.createElement('button');
+        btn.className = 'upgrade-btn';
+        btn.dataset.id = upg.id;
+        btn.setAttribute('aria-label', `Beli upgrade ${upg.name}`);
+        btn.innerHTML = `
+          <span class="upg-icon">${upg.icon}</span>
+          <span class="upg-name">${upg.name} (Lv0)</span>
+          <span class="upg-cost">💰 ${fmt(upg.baseCost)}</span>
+          <span class="upg-effect">${upg.desc}</span>
+        `;
+        btn.addEventListener('click', () => buyUpgrade(upg));
+        upgradesEl.appendChild(btn);
+      });
+    }
+
+    // ── Actions ──────────────────────────────────────────────────────────────
+    function doClick(x, y) {
+      state.clicks += state.perClick;
+
+      // Bump animation on score
+      totalEl.classList.remove('bump');
+      void totalEl.offsetWidth;
+      totalEl.classList.add('bump');
+      setTimeout(() => totalEl.classList.remove('bump'), 120);
+
+      // Icon click animation
+      mainBtn.classList.add('clicked');
+      setTimeout(() => mainBtn.classList.remove('clicked'), 120);
+
+      // Floating +N text
+      spawnFloat(x, y, `+${fmt(state.perClick)}`);
+
+      checkMilestones();
+      render();
+      save();
+    }
+
+    function buyUpgrade(upg) {
+      const lvl  = state.upgrades[upg.id] || 0;
+      const cost = upgCost(upg);
+      if (lvl >= upg.maxLevel || state.clicks < cost) return;
+
+      state.clicks -= cost;
+      state.upgrades[upg.id] = lvl + 1;
+
+      // Reset derived stats and recalculate
+      recalcStats();
+      render();
+      save();
+    }
+
+    function recalcStats() {
+      // Reset to base
+      state.perClick   = 1;
+      state.autoPerSec = 0;
+
+      // Reapply all upgrades
+      UPGRADES.forEach(upg => {
+        const lvl = state.upgrades[upg.id] || 0;
+        for (let i = 0; i < lvl; i++) upg.effect(state);
+      });
+    }
+
+    // ── Float text ───────────────────────────────────────────────────────────
+    function spawnFloat(x, y, text) {
+      const el = document.createElement('div');
+      el.className = 'float-text';
+      el.textContent = text;
+
+      const rect = clickArea.getBoundingClientRect();
+      el.style.left = (x - rect.left - 20) + 'px';
+      el.style.top  = (y - rect.top  - 20) + 'px';
+      clickArea.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    }
+
+    // ── Milestones ───────────────────────────────────────────────────────────
+    function checkMilestones() {
+      MILESTONES.forEach(m => {
+        if (!reachedMilestones.has(m.at) && state.clicks >= m.at) {
+          reachedMilestones.add(m.at);
+          showToast(m.msg);
+          mainIcon.textContent = m.icon;
+        }
+      });
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ── Auto clicker ─────────────────────────────────────────────────────────
+    let lastTick = Date.now();
+    function autoTick() {
+      const now   = Date.now();
+      const delta = (now - lastTick) / 1000;
+      lastTick = now;
+
+      if (state.autoPerSec > 0) {
+        state.clicks += state.autoPerSec * delta;
+        checkMilestones();
+        render();
+      }
+      requestAnimationFrame(autoTick);
+    }
+
+    // ── Persist ───────────────────────────────────────────────────────────────
+    function save() {
+      localStorage.setItem('iconclicker', JSON.stringify({
+        clicks: state.clicks,
+        upgrades: state.upgrades
+      }));
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem('iconclicker');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        state.clicks   = data.clicks   || 0;
+        state.upgrades = data.upgrades || {};
+        recalcStats();
+
+        // Restore reached milestones silently
+        MILESTONES.forEach(m => {
+          if (state.clicks >= m.at) reachedMilestones.add(m.at);
+        });
+        // Set icon to last milestone icon
+        const last = [...MILESTONES].reverse().find(m => state.clicks >= m.at);
+        if (last) mainIcon.textContent = last.icon;
+      } catch(e) { /* ignore */ }
+    }
+
+    // ── Particles ─────────────────────────────────────────────────────────────
+    function spawnParticles() {
+      const container = document.getElementById('particles');
+      const colors = ['#64c8ff','#ffd700','#ff6eb4','#a78bfa','#34d399'];
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = Math.random() * 14 + 4;
+        p.style.cssText = `
+          width:${size}px; height:${size}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          left:${Math.random()*100}%;
+          animation-duration:${Math.random()*12+8}s;
+          animation-delay:${Math.random()*10}s;
+        `;
+        container.appendChild(p);
+      }
+    }
+
+    // ── Event listeners ───────────────────────────────────────────────────────
+    mainBtn.addEventListener('click', e => {
+      doClick(e.clientX, e.clientY);
+    });
+
+    // Touch support
+    mainBtn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      doClick(t.clientX, t.clientY);
+    }, { passive: false });
+
+    resetBtn.addEventListener('click', () => {
+      if (!confirm('Reset game? Semua progress akan hilang.')) return;
+      state = { clicks: 0, perClick: 1, autoPerSec: 0, upgrades: {} };
+      reachedMilestones.clear();
+      mainIcon.textContent = '⚡';
+      localStorage.removeItem('iconclicker');
+      render();
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    spawnParticles();
+    buildUpgrades();
+    load();
+    render();
+    requestAnimationFrame(autoTick);
+  </script>
+</body>
+</html>
